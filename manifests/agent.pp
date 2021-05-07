@@ -221,7 +221,7 @@ class newrelic_infra::agent (
             command => "tar -xzf /opt/${tar_filename} -C ${target_dir} ",
             path    => '/bin',
             creates => "${target_dir}/newrelic-infra/",
-            require => File[
+            require => Remote_file[
               'download_newrelic_agent',
               $target_dir
             ]
@@ -259,7 +259,7 @@ class newrelic_infra::agent (
         ensure   => $ensure_windows,
         name     => 'New Relic Infrastructure Agent',
         source   => "${windows_temp_folder}/newrelic-infra.msi",
-        require  => File['download_newrelic_agent'],
+        require  => Remote_file['download_newrelic_agent'],
         provider => $windows_provider,
       }
     }
