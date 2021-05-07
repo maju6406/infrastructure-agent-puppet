@@ -308,7 +308,7 @@ class newrelic_infra::agent (
     # Setup agent service
     if $ensure == 'absent' {
       service { 'newrelic-infra':
-        ensure => absent,
+        ensure => stopped,
         enable => false
       }
     } else {
