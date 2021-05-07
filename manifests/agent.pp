@@ -306,6 +306,16 @@ class newrelic_infra::agent (
     }
   } else {
     # Setup agent service
-    service { 'newrelic-infra':}
+    if $ensure == 'absent' {
+      service { 'newrelic-infra':
+        ensure => absent,
+        enable => false
+      }
+    } else {
+      service { 'newrelic-infra':
+        ensure => $service_ensure,
+        enable => true
+      }
+    }
   }
 }
