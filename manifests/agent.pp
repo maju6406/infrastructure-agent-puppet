@@ -281,7 +281,7 @@ class newrelic_infra::agent (
   }
   else {
     file { 'newrelic_config_file':
-      ensure  => file,
+      ensure  => $ensure_windows,
       name    => 'C:\Program Files\New Relic\newrelic-infra\newrelic-infra.yml',
       content => template('newrelic_infra/newrelic-infra.yml.erb'),
       require => Package['newrelic-infra'],
