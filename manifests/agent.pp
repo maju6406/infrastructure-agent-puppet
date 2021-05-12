@@ -280,12 +280,19 @@ class newrelic_infra::agent (
     }
   }
   else {
-    file { 'newrelic_config_file':
-      ensure  => $ensure_windows,
-      name    => 'C:\Program Files\New Relic\newrelic-infra\newrelic-infra.yml',
-      content => template('newrelic_infra/newrelic-infra.yml.erb'),
-      require => Package['newrelic-infra'],
-      notify  => Service['newrelic-infra'], # Restarts the agent service on config changes
+    if $ensure == 'absent' {
+      file { 'newrelic_config_file':
+        ensure => 'absent',
+        name   => 'C:\Program Files\New Relic\newrelic-infra\newrelic-infra.yml'
+      }
+    } else {
+      file { 'newrelic_config_file':
+        ensure  => file,
+        name    => 'C:\Program Files\New Relic\newrelic-infra\newrelic-infra.yml',
+        content => template('newrelic_infra/newrelic-infra.yml.erb'),
+        require => Package['newrelic-infra'],
+        notify  => Service['newrelic-infra'], # Restarts the agent service on config changes
+      }
     }
   }
 
