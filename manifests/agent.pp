@@ -235,57 +235,72 @@ class newrelic_infra::agent (
           }
           Exec['run installation script'] -> Service['newrelic-infra']
         }
-      default: {
-        fail('New Relic Infrastructure agent is not yet supported on this platform')
+        default: {
+          fail('New Relic Infrastructure agent is not yet supported on this platform')
+        }
       }
+
+      # Setup agent config
+      file { '/etc/newrelic-infra.yml':
+        ensure  => 'present',
+        owner   => 'root',
+        group   => 'root',
+        mode    => '0640',
+        content => template('newrelic_infra/newrelic-infra.yml.erb'),
+        notify  => Service['newrelic-infra'] # Restarts the agent service on config changes
       }
     }
     'windows': {
-      if $ensure == 'latest' {
-        $ensure_windows = 'installed'
-      } else {
-        $ensure_windows = $ensure
+
+      case $ensure {
+        'latest': {
+          $file_name  = 'newrelic-infra.msi'
+          $pkg_ensure = 'installed'
+          $cfg_ensure = 'file'
+        }
+        'installed': {
+          $file_name  = 'newrelic-infra.msi'
+          $pkg_ensure = 'installed'
+          $cfg_ensure = 'file'
+        }
+        'absent': {
+          $file_name  = 'newrelic-infra.msi'
+          $pkg_ensure = 'absent'
+          $cfg_ensure = 'absent'
+        }
+        default: {
+          $file_name  = "newrelic-infra.${ensure}.msi"
+          $pkg_ensure = $ensure
+          $cfg_ensure = 'file'
+        }
       }
 
       # download the new relic infrastructure msi file
       remote_file { 'download_newrelic_agent':
         ensure => present,
-        path   => "${windows_temp_folder}/newrelic-infra.msi",
+        path   => "${windows_temp_folder}/${file_name}",
         source => $windows_download_url,
         proxy  => $download_proxy
       }
 
       package { 'newrelic-infra':
-        ensure   => $ensure_windows,
+        ensure   => $pkg_ensure,
         name     => 'New Relic Infrastructure Agent',
-        source   => "${windows_temp_folder}/newrelic-infra.msi",
+        source   => "${windows_temp_folder}/${file_name}",
         require  => Remote_file['download_newrelic_agent'],
         provider => $windows_provider,
+      }
+
+      file { 'newrelic_config_file':
+        ensure  => $cfg_ensure,
+        name    => 'C:\Program Files\New Relic\newrelic-infra\newrelic-infra.yml',
+        content => template('newrelic_infra/newrelic-infra.yml.erb'),
+        require => Package['newrelic-infra'],
+        notify  => Service['newrelic-infra'], # Restarts the agent service on config changes
       }
     }
     default: {
       fail('New Relic Infrastructure agent is not yet supported on this platform')
-    }
-  }
-
-  if $::operatingsystem != 'windows' {
-    # Setup agent config
-    file { '/etc/newrelic-infra.yml':
-      ensure  => 'present',
-      owner   => 'root',
-      group   => 'root',
-      mode    => '0640',
-      content => template('newrelic_infra/newrelic-infra.yml.erb'),
-      notify  => Service['newrelic-infra'] # Restarts the agent service on config changes
-    }
-  }
-  else {
-    file { 'newrelic_config_file':
-      ensure  => $ensure_windows,
-      name    => 'C:\Program Files\New Relic\newrelic-infra\newrelic-infra.yml',
-      content => template('newrelic_infra/newrelic-infra.yml.erb'),
-      require => Package['newrelic-infra'],
-      notify  => Service['newrelic-infra'], # Restarts the agent service on config changes
     }
   }
 
